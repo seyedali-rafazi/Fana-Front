@@ -1,10 +1,19 @@
 import type { AnalyzeResult, Draft } from './types';
 
+export function buildApiUrl(
+  path: string,
+  baseUrl: string | undefined = import.meta.env.VITE_API_BASE_URL,
+): string {
+  const normalizedBase = (baseUrl ?? '').trim().replace(/\/+$/, '');
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${normalizedBase}${normalizedPath}`;
+}
+
 export async function analyze(file: File, now?: string): Promise<AnalyzeResult> {
   const form = new FormData();
   form.append('file', file);
   const qs = now ? `?now=${encodeURIComponent(now)}` : '';
-  const res = await fetch(`/api/analyze${qs}`, { method: 'POST', body: form });
+  const res = await fetch(buildApiUrl(`/api/analyze${qs}`), { method: 'POST', body: form });
   if (!res.ok) {
     throw new Error(`Analyze failed (${res.status}): ${await res.text()}`);
   }
@@ -17,7 +26,7 @@ export async function requestDraft(m: {
   subject: string;
   body: string;
 }): Promise<Draft> {
-  const res = await fetch('/api/draft', {
+  const res = await fetch(buildApiUrl('/api/draft'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(m),
